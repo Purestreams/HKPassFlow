@@ -107,12 +107,7 @@ app.post('/HK/stat', (req, res) => {
     console.log(Departure);
     //always save Arrival before Departure
     //[{"Year":2024,"Month":3,"Flow":"Arrival","Local":8374047,"Mainland":2466042,"Others":936189},{"Year":2024,"Month":3,"Flow":"Departure","Local":9291362,"Mainland":2489151,"Others":946946}]
-    //check not duplicate
-    var check = data.find({Year: Arrival.Year, Month: Arrival.Month});
-    if (check.length > 0) {
-        res.status(400).json([{"error": "Data already exists"}]);
-        return;
-    }
+
 
     //check error
     if (Arrival.Year != Departure.Year || Arrival.Month != Departure.Month) {
@@ -122,13 +117,24 @@ app.post('/HK/stat', (req, res) => {
     //return the sum of the arrival and departure data
     Year = Arrival.Year;
     Month = Arrival.Month;
-    Local = Arrival.Local - Departure.Local;
-    Mainland = Arrival.Mainland - Departure.Mainland;
-    Others = Arrival.Others - Departure.Others;
-    Total = Local + Mainland + Others;
-    res.json([{Year: Year, Month: Month, Local: Local, Mainland: Mainland, Others: Others, Total: Total}]);
-    //save the data
-    data.insertMany([{Year: Year, Month: Month, Local: Local, Mainland: Mainland, Others: Others, Total: Total}]);
+    //check not duplicate
+    data.find({Year: Year, Month: Month}).then((check) => {
+    if (check.length > 0) {
+        res.status(400).json([{"error": "Data already exists"}]);
+        console.log("Data already exists");
+        return;
+    }else{
+        Local = Arrival.Local - Departure.Local;
+        Mainland = Arrival.Mainland - Departure.Mainland;
+        Others = Arrival.Others - Departure.Others;
+        Total = Local + Mainland + Others;
+        //res.json([{Year: Year, Month: Month, Local: Local, Mainland: Mainland, Others: Others, Total: Total}]);
+        //save the data
+        res.json([{Year: Year, Month: Month, Local: Local, Mainland: Mainland, Others: Others, Total: Total}]);
+        data.insertMany([{Year: Year, Month: Month, Local: Local, Mainland: Mainland, Others: Others, Total: Total}],{versionKey: false});
+    }
+});
+    
 });
 
 //if the request is not matched
